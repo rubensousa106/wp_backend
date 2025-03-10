@@ -1,8 +1,8 @@
 # Projeto WP: Integração Backend e Frontend
 
-Este projeto integra um backend em PHP com um frontend em React 
-Native (usando Expo). O sistema utiliza também Composer 
-para gestão de dependências PHP e Guzzle para chamadas de 
+Este projeto integra um backend em PHP com um frontend em React
+Native (usando Expo). O sistema utiliza também Composer
+para gestão de dependências PHP e Guzzle para chamadas de
 API (ex.: API do Whapi).
 
 ## Ferramentas Utilizadas
@@ -26,16 +26,108 @@ API (ex.: API do Whapi).
 O projeto está dividido em duas partes:
 
 - **Backend:** Localizado na pasta `wp_backend`
-    - **public/** – Contém os endpoints públicos, como `index.php`, `login.php`, `get_user.php`, `send_verification.php`, `verify_code.php`, etc.
-    - **src/** – Contém os controladores, serviços e a classe de conexão com o base de dados.
-    - **composer.json** – Gerencia as dependências PHP.
+  - **public/** – Contém os endpoints públicos, como `index.php`, `login.php`, `get_user.php`, `send_verification.php`, `verify_code.php`, etc.
+  - **src/** – Contém os controladores, serviços e a classe de conexão com o base de dados.
+  - **composer.json** – Gerencia as dependências PHP.
 - **Frontend:** Localizado na pasta do aplicativo React Native (geralmente na raiz do projeto ou numa pasta separada)
-    - O aplicativo é criado com React Native e Expo.
-    - Os componentes, como `Login.js`, `Dashboard.js`, `EditProfile.js`, etc., estão organizados na pasta `src/components`.
+  - O aplicativo é criado com React Native e Expo.
+  - Os componentes, como `Login.js`, `Dashboard.js`, `EditProfile.js`, etc., estão organizados na pasta `src/components`.
 
 ## Passo a Passo para Executar o Projeto
 
-### 1. Configuração e Execução do Backend
+## Configuração do Banco de Dados
+
+Antes de iniciar o projeto, é necessário criar a base de dados, as tabelas e inserir dados de exemplo. Siga os passos abaixo:
+
+### Criação da Base de Dados:
+
+Conecte-se ao seu servidor MariaDBe execute a seguinte query para criar a base de dados `wp_db`:
+
+```sql
+CREATE DATABASE wp_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+Criação das Tabelas:
+
+Execute as queries abaixo para criar as tabelas :
+
+Tabela Clientes:
+
+```sql
+CREATE TABLE Clientes (
+id INT AUTO_INCREMENT PRIMARY KEY,
+nome VARCHAR(100) NOT NULL,
+email VARCHAR(100) NOT NULL UNIQUE,
+telefone VARCHAR(15) NOT NULL,
+senha VARCHAR(255) NOT NULL,
+verification_code VARCHAR(10) NULL,
+code_expires_at DATETIME NULL,
+is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Tabela Produtos:
+
+```sql
+CREATE TABLE Produtos (
+id INT AUTO_INCREMENT PRIMARY KEY,
+nome VARCHAR(100) NOT NULL,
+descricao TEXT,
+preco DECIMAL(10,2),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+Tabela Subscricoes:
+
+```sql
+CREATE TABLE subscricoes (
+id INT AUTO_INCREMENT PRIMARY KEY,
+cliente_id INT NOT NULL,
+produto_id INT NOT NULL,
+data_subscricao DATE,
+FOREIGN KEY (cliente_id) REFERENCES Clientes(id),
+FOREIGN KEY (produto_id) REFERENCES Produtos(id)
+) COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB;
+```
+
+### Inserir Dados de Exemplo:
+
+#### Inserir Utilizadores:
+
+Exemplo para inserir um utilizador com id 1:
+
+```sql
+INSERT INTO Clientes (nome, email, telefone, senha)
+VALUES ('Utilizador Exemplo', 'exemplo@dominio.com', '912345678', 'senha_hash_aqui');
+```
+Nota: Utilize password_hash('sua_senha', PASSWORD_DEFAULT) no PHP para gerar o hash da senha e substitua 'senha_hash_aqui'.
+
+#### Inserir Produtos:
+
+```sql
+INSERT INTO Produtos (nome, descricao, preco)
+VALUES
+('Netflix Subscription', 'Serviço de subscrição para streaming de filmes e séries', 15.99),
+('Spotify Premium', 'Subscrição para streaming de música sem anúncios', 9.99),
+('Amazon Prime', 'Serviço de subscrição que oferece envio gratuito, streaming e outros benefícios', 12.99),
+('Adobe Creative Cloud', 'Subscrição com acesso à suite de softwares Adobe', 52.99);
+```
+
+#### Inserir Subscrições:
+
+Se o utilizador com id 1 subscreveu todos os produtos
+
+```sql
+INSERT INTO subscricoes (cliente_id, produto_id, data_subscricao)
+VALUES
+(1, 1, CURDATE()),
+(1, 2, CURDATE()),
+(1, 3, CURDATE()),
+(1, 4, CURDATE());
+```
+
+
+### 2. Configuração e Execução do Backend
 
 #### Instalar Dependências do Composer
 
@@ -58,7 +150,7 @@ Isso iniciará o servidor embutido do PHP, usando a pasta public como raiz.
 
 Você pode testar os endpoints (por exemplo, http://localhost:8000/get_user.php?cliente_id=1) usando o navegador ou o Postman.
 
-2. Configuração e Execução do Frontend
+### 3.Configuração e Execução do Frontend
 Instalar Dependências do Projeto React Native
 Navegue até a pasta do projeto React Native (onde está o package.json do aplicativo) e execute:
 
@@ -70,14 +162,14 @@ npm install
 expo start
 expo install
 ```
-Isso abrirá a interface do Expo. Se estiver usando um emulador 
-Android, certifique-se de que o endereço localhost no código 
-seja substituído por 10.0.2.2, caso contrário, o aplicativo 
+Isso abrirá a interface do Expo. Se estiver usando um emulador
+Android, certifique-se de que o endereço localhost no código
+seja substituído por 10.0.2.2, caso contrário, o aplicativo
 poderá não conseguir comunicar com o backend.
 
 3. Fluxo de Uso
-Backend
-Os endpoints (por exemplo, login.php, get_user.php, send_verification.php, verify_code.php, etc.) estão prontos para processar as requisições e interagir com o banco de dados.
+   Backend
+   Os endpoints (por exemplo, login.php, get_user.php, send_verification.php, verify_code.php, etc.) estão prontos para processar as requisições e interagir com o banco de dados.
 
 Frontend
 O aplicativo React Native permite:
@@ -85,7 +177,7 @@ O aplicativo React Native permite:
 Login do usuário.
 Exibição do Dashboard com os produtos subscritos.
 Edição do perfil (com verificação do número de telefone, envio e verificação de código, etc.).
-
+w
 
 Testes:
 Utilize ferramentas como o Postman para testar individualmente os endpoints do backend antes de integrá-los com o aplicativo.
